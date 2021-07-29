@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+
+## add-gitinfo2-hook: add hooks for gitinfo2 to repository in current directory
+
+## Copyright 2021 Michael M. Hoffman <michael.hoffman@utoronto.ca>
+
+set -o nounset -o pipefail -o errexit
+
+if [[ $# != 0 || "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
+    echo usage: "$0"
+    exit 2
+fi
+
+post_hook_file="$(texdoc --list --nointeract --machine gitinfo2/post-xxx-sample.txt | cut --fields=3)"
+
+for hook in checkout commit merge; do
+    cp --verbose "$post_hook_file" ".git/hooks/post-$hook"
+done
+
+sh "$post_hook_file"
