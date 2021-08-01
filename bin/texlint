@@ -1,0 +1,75 @@
+#!/usr/bin/env bash
+
+## texlint: lint TeX files
+
+## Copyright 2021 Michael M. Hoffman <michael.hoffman@utoronto.ca>
+
+set -o nounset -o pipefail -o errexit
+
+if [[ $# != 1 || "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
+    echo usage: "$0" TEXNAME
+    exit 2
+fi
+
+proc_acros () {
+    sort | uniq | paste -s -d '|' | sed -e 's/ /! /g'
+}
+
+texname="$1"
+if [[ $texname != *.tex ]]; then
+    texname="${texname}.tex"
+fi
+
+pdfname="${texname%.tex}.pdf"
+auxname="${texname%.tex}.aux"
+
+export chktexrc="$(mktemp -t "$(basename "$0").XXXXXXXXXX.chktexrc")"
+
+on_exit ()
+{
+    rm -r "$chktexrc"
+}
+
+trap on_exit EXIT
+
+set -v
+fotlatexmk "$texname" || true
+set +v
+
+short_acros="$(perl -ne 'print if s/^\\newacro{([^}]+)}\[([^\]]+)\]{.+}$/\1\n\2/' "$auxname" | proc_acros)"
+long_acros="$(perl -ne 'print if s/^\\newacro{[^}]+}\[[^\]]+\]{(.+)}$/\1/' "$auxname" | proc_acros)"
+
+cat >"$chktexrc" <<EOF
+WipeArg
+{
+    \acro:{}[]{} \acroindefinite:{}[]{} \acroplural:{}[]{}
+    \acrodef:{}[]{} \acrodefindefinite:{}[]{} \acrodefplural:{}[]{}
+    \newacro:{}[]{} \newacroindefinite:{}[]{} \newacroplural:{}[]{}
+    \acused:{}
+    \acrodefused:{}[]{}
+    \ac:*[]{} \Ac:*[]{} \acp:*[]{} \Acp:*[]{}
+    \acf:*[]{} \Acf:*[]{} \acfp:*[]{} \Acfp:*[]{} \acfi:*[]{} \Acfi:*[]{}
+    \acs:*[]{} \Acs:*[]{} \acsp:*[]{} \Acsp:*[]{} \acsu:*[]{} \Acsu:*[]{}
+    \acl:*[]{} \Acl:*[]{} \aclp:*[]{} \Aclp:*[]{} \aclu:*[]{} \Aclu:*[]{}
+    \iac:*[]{} \Iac:*{}
+    \DeclareSIUnit:{}{}
+    \url:{}
+}
+
+UserWarnRegEx
+{
+    (?!#-101:Short! version! of! acronym! found)(?<!!\\\\)\\b(?:$short_acros)\\b
+    (?!#-102:Long! version! of! acronym! found)(?<!!\\\\)\\b(?:$long_acros)\\b
+}
+EOF
+
+set -v
+chktex --localrc "$chktexrc" "$texname" 2>&1 || true
+
+hunspell -l -t "$texname" | sort | uniq || true
+
+pdfuris "$pdfname" | xargs linkchecker --ignore-url=^mailto --no-robots --check-extern --recursion-level=0 --no-status || true
+
+set +v
+
+# to look for redirection add --verbose
