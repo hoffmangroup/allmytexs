@@ -2,7 +2,7 @@
 
 bindir = $(HOME)/.local/bin
 
-scripts = bin/add-gitinfo2-hook
+scripts = bin/add-gitinfo2-hook bin/fotlatexmk bin/texemail bin/texlint
 
 install:
 	install --target-directory=$(bindir) $(scripts)
