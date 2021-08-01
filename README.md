@@ -17,7 +17,7 @@ Different scripts have different prerequisites, which include:
 - `latexmk`
 - `linkchecker`
 - `luatex`
-- `pdfuris` (available someday at https://github.com/hoffmanlab/pdfuris)
+- `pdfuris` (available someday at https://github.com/hoffmangroup/pdfuris)
 
 ## Scripts
 
