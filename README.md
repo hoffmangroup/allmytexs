@@ -21,13 +21,10 @@ Different scripts have different prerequisites, which include:
 
 ## Scripts
 
-`add-gitinfo2-hook`: install git hooks for the `gitinfo2` package and run
-
-`fotlatexmk`: run `latexmk` and filter results for only potentially interesting warnings and errors
-
-`texemail`: run `texlint`, optionally run `latexdiff`, and generate a covering email for authors with a new revision
-
-`texlint`: run `fotlatexmk`, `chktex`, `hunspell`, and `linkchecker`
+- `add-gitinfo2-hook`: install git hooks for the `gitinfo2` package and run
+- `fotlatexmk`: run `latexmk` and filter results for only potentially interesting warnings and errors
+- `texemail`: run `texlint`, optionally run `latexdiff`, and generate a covering email for authors with a new revision
+- `texlint`: run `fotlatexmk`, `chktex`, `hunspell`, and `linkchecker`
 
 ## License
 
