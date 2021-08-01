@@ -1,0 +1,86 @@
+#!/usr/bin/env bash
+
+## fotlatexmk: run latexmk and filter online transcript
+
+## Copyright 2020, 2021 Michael M. Hoffman <michael.hoffman@utoronto.ca>
+
+set -o nounset -o pipefail -o errexit
+
+texcmd=lualatex
+
+uname_r="$(uname -r)"
+
+if [[ "${uname_r,,}" == *microsoft* ]]; then
+    wsl=1
+else
+    wsl=0
+fi
+
+while :; do
+    case "${1:-}" in
+        -h|--help)
+            echo usage: "$0" ARGS
+            exit 2
+            ;;
+        -pdflatex|--pdflatex)
+            texcmd=pdflatex
+            ;;
+        -xelatex|--xelatex)
+            texcmd=xelatex
+            ;;
+        --) # end of options
+            shift
+            break
+            ;;
+        *)
+            break
+    esac
+
+    shift
+done
+
+case $texcmd in
+    lualatex)
+        ignore_str="^This is Lua(?:HB)?TeX"
+        ;;
+    xelatex)
+        ignore_str="^This is XeTeX"
+        ;;
+    *)
+        ignore_str="^This is pdfTeX"
+        ;;
+esac
+
+status=0
+
+# XXX: use temp directory instead
+logfile="$(mktemp --tmpdir "$(basename "$0").XXXXXXXXXX")"
+tmp_syncfile="$(mktemp --tmpdir "$(basename "$0").XXXXXXXXXX")" # XXX: only make on WSL
+
+on_exit ()
+{
+    rm -rf "$logfile" "$tmp_syncfile"
+}
+
+trap on_exit EXIT
+
+texfotcmd="texfot --quiet --ignore='$ignore_str' --ignore='^\*\*\* changes package .* \*\*\*\$' '$texcmd' -file-line-error -synctex=1 %O %S > '$logfile'"
+
+if ((wsl)); then
+    syncfile=%B.synctex.gz
+
+    # XXX: fix all files in syncfile -> wsl$ filenames or sometimes get weird errors
+    endcompilecmd="zcat $syncfile | sed -e 's^Input:1:.*/^Input:1:^' | gzip -c > '$tmp_syncfile' && mv '$tmp_syncfile' $syncfile"
+else
+    endcompilecmd=""
+fi
+
+latexmk -$texcmd \
+        -e \
+        "\$${texcmd}_silent_switch = ''; \$$texcmd=q#$texfotcmd#; \$success_cmd = \$warning_cmd = \$failure_cmd = q#$endcompilecmd#" \
+        "$@" || status="$?"
+
+echo
+cat "$logfile"
+
+exit "$status"
