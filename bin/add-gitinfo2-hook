@@ -14,7 +14,7 @@ fi
 post_hook_file="$(texdoc --list --nointeract --machine gitinfo2/post-xxx-sample.txt | cut --fields=3)"
 
 for hook in checkout commit merge; do
-    cp --verbose "$post_hook_file" ".git/hooks/post-$hook"
+    install --verbose --no-target-directory "$post_hook_file" ".git/hooks/post-$hook"
 done
 
 sh "$post_hook_file"
