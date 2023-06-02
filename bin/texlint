@@ -114,11 +114,12 @@ chktex --localrc "$chktexrc" "$texname" 2>&1 || true
 
 hunspell -l -t "$texname" | sort | uniq || true
 
-pdfuris "$pdfname" | xargs linkchecker --ignore-url=^mailto --no-robots --check-extern --recursion-level=0 --no-status || true
 for bibname in "${bibnames[@]}"; do
     biblint check "$bibname"
 done
 
+# linkchecker doesn't repeat checking the same link, so no need to run this through sort and uniq first
+pdfuris "$pdfname" | xargs linkchecker --ignore-url=^mailto --no-robots --check-extern --recursion-level=0 --no-status --user-agent "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36" || true
 
 set +v
 
