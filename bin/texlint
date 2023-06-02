@@ -89,8 +89,8 @@ WipeArg
 
 UserWarnRegEx
 {
-    (?!#-101:Short! version! of! acronym! found)(?<!!\\\\)\\b(?:$short_acros)\\b
-    (?!#-102:Long! version! of! acronym! found)(?<!!\\\\)\\b(?:$long_acros)\\b
+    (?!#-63:Short! version! of! acronym! found)(?<!!\\\\)\\b(?:$short_acros)\\b
+    (?!#-62:Long! version! of! acronym! found)(?<!!\\\\)\\b(?:$long_acros)\\b
 }
 EOF
 
