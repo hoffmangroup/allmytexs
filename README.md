@@ -10,6 +10,7 @@ Miscellaneous TeX scripts by Michael Hoffman.
 
 Different scripts have different prerequisites, which include:
 
+- `biblint`
 - `chktex`
 - `gitinfo2` LaTeX package documentation
 - `hunspell`
@@ -18,13 +19,14 @@ Different scripts have different prerequisites, which include:
 - `linkchecker`
 - `luatex`
 - `pdfuris` (available someday at https://github.com/hoffmangroup/pdfuris)
+- `xmlstarlet`
 
 ## Scripts
 
 - `add-gitinfo2-hook`: install git hooks for the `gitinfo2` package and run
 - `fotlatexmk`: run `latexmk` and filter results for only potentially interesting warnings and errors
 - `texemail`: run `texlint`, optionally run `latexdiff`, and generate a covering email for authors with a new revision
-- `texlint`: run `fotlatexmk`, `chktex`, `hunspell`, and `linkchecker`
+- `texlint`: run `fotlatexmk`, `chktex`, `hunspell`, `biblint`, and `linkchecker`
 
 ## License
 

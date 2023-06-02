@@ -98,12 +98,27 @@ UserWarnRegEx
 EOF
 fi
 
+bcfname="${texname%.tex}.bcf"
+if [ -e "$bcfname" ]; then
+    bibnames=($(xmlstarlet select --template --value-of "//bcf:datasource" "$bcfname" | sort | uniq))
+else
+    bibnames=($(perl -ne 'print if s/\\bibdata{([^}]+)}/\1.bib/' "$auxname"))
+fi
+
+if [[ "${WSL_DISTRO_NAME:-}" ]]; then
+    dos2unix "$(readlink "$HOME/.hunspell_en_US")"
+fi
+
 set -v
 chktex --localrc "$chktexrc" "$texname" 2>&1 || true
 
 hunspell -l -t "$texname" | sort | uniq || true
 
 pdfuris "$pdfname" | xargs linkchecker --ignore-url=^mailto --no-robots --check-extern --recursion-level=0 --no-status || true
+for bibname in "${bibnames[@]}"; do
+    biblint check "$bibname"
+done
+
 
 set +v
 
