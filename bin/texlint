@@ -2,14 +2,34 @@
 
 ## texlint: lint TeX files
 
-## Copyright 2021 Michael M. Hoffman <michael.hoffman@utoronto.ca>
+## Copyright 2021-2023 Michael M. Hoffman <michael.hoffman@utoronto.ca>
 
 set -o nounset -o pipefail -o errexit
 
-if [[ $# != 1 || "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
-    echo usage: "$0" TEXNAME
-    exit 2
-fi
+texcmd=lualatex
+
+while :; do
+    case "${1:-}" in
+        -h|--help)
+            echo usage: "$0" [OPTIONS] TEXNAME
+            exit 2
+            ;;
+        -pdflatex|--pdflatex)
+            texcmd=pdflatex
+            ;;
+        -xelatex|--xelatex)
+            texcmd=xelatex
+            ;;
+        --) # end of options
+            shift
+            break
+            ;;
+        *)
+            break
+    esac
+
+    shift
+done
 
 proc_acros () {
     sort | uniq | paste -s -d '|' | sed -e 's/ /! /g'
@@ -32,13 +52,24 @@ on_exit ()
 
 trap on_exit EXIT
 
-set -v
-fotlatexmk "$texname" || true
-set +v
+
+if [[ "$texcmd" == "lualatex" ]]; then
+    set -v
+    fotlatexmk "$texname" || true
+    set +v
+else
+    set -v
+    fotlatexmk --"$texcmd" "$texname" || true
+    set +v
+fi
 
 short_acros="$(perl -ne 'print if s/^\\newacro{([^}]+)}\[([^\]]+)\]{.+}$/\1\n\2/' "$auxname" | proc_acros)"
 long_acros="$(perl -ne 'print if s/^\\newacro{[^}]+}\[[^\]]+\]{(.+)}$/\1/' "$auxname" | proc_acros)"
 
+# PCRE regular expressions are essential for this to work. The default Ubuntu
+# chktex has PCRE support, but tlmgr-installed does not. `rm
+# /usr/local/bin/chktex` is a good solution if tlmgr has installed a chktex
+# that only supports extended POSIX regular expressions there
 cat >"$chktexrc" <<EOF
 WipeArg
 {
@@ -52,23 +83,43 @@ WipeArg
     \acs:*[]{} \Acs:*[]{} \acsp:*[]{} \Acsp:*[]{} \acsu:*[]{} \Acsu:*[]{}
     \acl:*[]{} \Acl:*[]{} \aclp:*[]{} \Aclp:*[]{} \aclu:*[]{} \Aclu:*[]{}
     \iac:*[]{} \Iac:*{}
-    \DeclareSIUnit:{}{}
-    \url:{}
-}
-
-UserWarnRegEx
-{
-    (?!#-101:Short! version! of! acronym! found)(?<!!\\\\)\\b(?:$short_acros)\\b
-    (?!#-102:Long! version! of! acronym! found)(?<!!\\\\)\\b(?:$long_acros)\\b
+    \DeclareSIUnit:[]{}{}
+    \url:{} \autoref:*{} \autocite:*{} \autocites:*{}
 }
 EOF
+
+if [[ "$short_acros" && "$long_acros" ]]; then
+    cat >>"$chktexrc" <<EOF
+UserWarnRegEx
+{
+    (?!#-63:Short! version! of! acronym! found)(?<!!\\\\)\\b(?:$short_acros)\\b
+    (?!#-62:Long! version! of! acronym! found)(?<!!\\\\)\\b(?:$long_acros)\\b
+}
+EOF
+fi
+
+bcfname="${texname%.tex}.bcf"
+if [ -e "$bcfname" ]; then
+    bibnames=($(xmlstarlet select --template --value-of "//bcf:datasource" "$bcfname" | sort | uniq))
+else
+    bibnames=($(perl -ne 'print if s/\\bibdata{([^}]+)}/\1.bib/' "$auxname"))
+fi
+
+if [[ "${WSL_DISTRO_NAME:-}" ]]; then
+    dos2unix "$(readlink "$HOME/.hunspell_en_US")"
+fi
 
 set -v
 chktex --localrc "$chktexrc" "$texname" 2>&1 || true
 
 hunspell -l -t "$texname" | sort | uniq || true
 
-pdfuris "$pdfname" | xargs linkchecker --ignore-url=^mailto --no-robots --check-extern --recursion-level=0 --no-status || true
+for bibname in "${bibnames[@]}"; do
+    biblint check "$bibname"
+done
+
+# linkchecker doesn't repeat checking the same link, so no need to run this through sort and uniq first
+pdfuris "$pdfname" | xargs linkchecker --ignore-url=^mailto --no-robots --check-extern --recursion-level=0 --no-status --user-agent "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36" || true
 
 set +v
 
