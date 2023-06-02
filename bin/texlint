@@ -83,8 +83,8 @@ WipeArg
     \acs:*[]{} \Acs:*[]{} \acsp:*[]{} \Acsp:*[]{} \acsu:*[]{} \Acsu:*[]{}
     \acl:*[]{} \Acl:*[]{} \aclp:*[]{} \Aclp:*[]{} \aclu:*[]{} \Aclu:*[]{}
     \iac:*[]{} \Iac:*{}
-    \DeclareSIUnit:{}{}
     \url:{}
+    \DeclareSIUnit:[]{}{}
 }
 
 UserWarnRegEx
