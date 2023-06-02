@@ -66,6 +66,10 @@ fi
 short_acros="$(perl -ne 'print if s/^\\newacro{([^}]+)}\[([^\]]+)\]{.+}$/\1\n\2/' "$auxname" | proc_acros)"
 long_acros="$(perl -ne 'print if s/^\\newacro{[^}]+}\[[^\]]+\]{(.+)}$/\1/' "$auxname" | proc_acros)"
 
+# PCRE regular expressions are essential for this to work. The default Ubuntu
+# chktex has PCRE support, but tlmgr-installed does not. `rm
+# /usr/local/bin/chktex` is a good solution if tlmgr has installed a chktex
+# that only supports extended POSIX regular expressions there
 cat >"$chktexrc" <<EOF
 WipeArg
 {
