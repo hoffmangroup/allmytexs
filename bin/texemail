@@ -2,7 +2,7 @@
 
 ## texemail: prepare email with attached version of TeX document
 
-## Copyright 2021 Michael M. Hoffman <michael.hoffman@utoronto.ca>
+## Copyright 2021, 2023 Michael M. Hoffman <michael.hoffman@utoronto.ca>
 
 set -o nounset -o pipefail -o errexit
 
@@ -32,6 +32,7 @@ while :; do
             run_texlint=0
             ;;
         --no-latexdiff)
+            # does not run latexdiff, but does compile a diff texfile that already exists
             run_latexdiff=0
             ;;
         --) # end of options
@@ -70,6 +71,8 @@ output=("Please find attached:" "" "$pdfname: revision $revision_new (${date_new
 
 shift
 for revision_old in "$@"; do
+    # XXX: add bibliography diffs
+    # https://tex.stackexchange.com/questions/625608/how-to-use-latexdiff-to-compare-changes-in-bib-files
     if ((run_latexdiff)); then
         latexdiff-git --force --graphics-markup=both --ignore-warnings \
                       --revision "$revision_old" "$texname"
