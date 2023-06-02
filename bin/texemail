@@ -9,21 +9,17 @@ set -o nounset -o pipefail -o errexit
 run_texlint=1
 run_latexdiff=1
 
-uname_a="$(uname -a)"
-
-clip_program='>&2 echo "Failed to copy the above text to the clipboard."'
-
-case "${uname_a,,}" in
-    *microsoft*|*windows*)
-        clip_program='clip.exe'
-        ;;
-    *darwin*)
-        clip_program="$(which pbcopy)"
-        ;;
-    *)
-        clip_program="$(which xsel) --clipboard"
-        ;;
-esac
+function copy_to_clipboard ()
+{
+    if type clip.exe >&/dev/null; then
+        clip.exe
+    elif type pbcopy >&/dev/null; then
+        pbcopy
+    elif type xsel >&/dev/null; then
+        xsel --clipboard
+    fi
+    # no clipboard program available -> no error or warning
+}
 
 function git_iso_date ()
 {
@@ -96,5 +92,4 @@ for revision_old in "$@"; do
     output+=("$diffpdfname: latexdiff against ${revision_old} (${date_old})")
 done
 
-
-printf '%s\n' "${output[@]}" | tee /dev/tty | $clip_program
+printf '%s\n' "${output[@]}" | tee /dev/tty | copy_to_clipboard
