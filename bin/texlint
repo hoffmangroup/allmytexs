@@ -2,14 +2,34 @@
 
 ## texlint: lint TeX files
 
-## Copyright 2021 Michael M. Hoffman <michael.hoffman@utoronto.ca>
+## Copyright 2021-2023 Michael M. Hoffman <michael.hoffman@utoronto.ca>
 
 set -o nounset -o pipefail -o errexit
 
-if [[ $# != 1 || "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
-    echo usage: "$0" TEXNAME
-    exit 2
-fi
+texcmd=lualatex
+
+while :; do
+    case "${1:-}" in
+        -h|--help)
+            echo usage: "$0" [OPTIONS] TEXNAME
+            exit 2
+            ;;
+        -pdflatex|--pdflatex)
+            texcmd=pdflatex
+            ;;
+        -xelatex|--xelatex)
+            texcmd=xelatex
+            ;;
+        --) # end of options
+            shift
+            break
+            ;;
+        *)
+            break
+    esac
+
+    shift
+done
 
 proc_acros () {
     sort | uniq | paste -s -d '|' | sed -e 's/ /! /g'
@@ -32,9 +52,16 @@ on_exit ()
 
 trap on_exit EXIT
 
-set -v
-fotlatexmk "$texname" || true
-set +v
+
+if [[ "$texcmd" == "lualatex" ]]; then
+    set -v
+    fotlatexmk "$texname" || true
+    set +v
+else
+    set -v
+    fotlatexmk --"$texcmd" "$texname" || true
+    set +v
+fi
 
 short_acros="$(perl -ne 'print if s/^\\newacro{([^}]+)}\[([^\]]+)\]{.+}$/\1\n\2/' "$auxname" | proc_acros)"
 long_acros="$(perl -ne 'print if s/^\\newacro{[^}]+}\[[^\]]+\]{(.+)}$/\1/' "$auxname" | proc_acros)"
