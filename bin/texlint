@@ -86,13 +86,17 @@ WipeArg
     \DeclareSIUnit:[]{}{}
     \url:{} \autoref:*{} \autocite:*{} \autocites:*{}
 }
+EOF
 
+if [[ "$short_acros" && "$long_acros" ]]; then
+    cat >>"$chktexrc" <<EOF
 UserWarnRegEx
 {
     (?!#-63:Short! version! of! acronym! found)(?<!!\\\\)\\b(?:$short_acros)\\b
     (?!#-62:Long! version! of! acronym! found)(?<!!\\\\)\\b(?:$long_acros)\\b
 }
 EOF
+fi
 
 set -v
 chktex --localrc "$chktexrc" "$texname" 2>&1 || true
